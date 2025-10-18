@@ -1,0 +1,344 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { clientService } from '../services/clientService';
+import { useAuth } from '../contexts/AuthContext';
+
+const ClientForm = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = Boolean(id);
+  const { user } = useAuth();
+
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    address: '',
+    nationalId: '',
+    occupation: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    personalCode: '',
+    registrationFeePaid: false,
+    collector: '' // This will be set to the current user's id
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    // Redirect ADMIN users away from client form
+    if (user && user.role === 'ADMIN') {
+      alert('Access denied: Admins cannot create or edit clients.');
+      navigate('/clients');
+      return;
+    }
+
+    // Set collector to current user id if not editing
+    if (user && !isEdit) {
+      setFormData(prev => ({ ...prev, collector: user.id }));
+    }
+    if (isEdit) {
+      fetchClient();
+    }
+  }, [id, isEdit, user, navigate]);
+
+  const fetchClient = async () => {
+    try {
+      setLoading(true);
+      const response = await clientService.getClientById(id);
+      // If collector is an object, use its id
+      setFormData({
+        ...response.data,
+        collector: response.data.collector?.id || ''
+      });
+    } catch (error) {
+      console.error('Error fetching client:', error);
+      alert('Error loading client data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    }
+    if (!formData.address.trim()) {
+      newErrors.address = 'Address is required';
+    }
+    if (!formData.personalCode.trim()) {
+      newErrors.personalCode = 'Personal code is required';
+    }
+    if (!formData.collector) {
+      newErrors.collector = 'Collector (user ID) is required';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
+    try {
+      setLoading(true);
+      // Prepare data for backend (collector as object with id)
+      const submitData = {
+        ...formData,
+        collector: { id: user.id }, // always use current user id
+        personalCode: formData.personalCode.trim(),
+      };
+      if (isEdit) {
+        await clientService.updateClient(id, submitData);
+        alert('Client updated successfully!');
+      } else {
+        await clientService.createClient(submitData);
+        alert('Client created successfully!');
+      }
+      navigate('/clients');
+    } catch (error) {
+      console.error('Error saving client:', error);
+      alert(`Error ${isEdit ? 'updating' : 'creating'} client: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && isEdit) {
+    return (
+      <div className="container-fluid">
+        <div className="text-center mt-5">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Prevent rendering form until user context is loaded and collector is set
+  if (!user || !formData.collector) {
+    return (
+      <div className="container-fluid">
+        <div className="text-center mt-5">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading user context...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container-fluid">
+      <div className="row">
+        <div className="col-12">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1>{isEdit ? 'Edit Client' : 'Add New Client'}</h1>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => navigate('/clients')}
+            >
+              <i className="fas fa-arrow-left me-2"></i>
+              Back to Clients
+            </button>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h5>{isEdit ? 'Update Client Information' : 'Client Information'}</h5>
+            </div>
+            <div className="card-body">
+              <form onSubmit={handleSubmit}>
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="firstName" className="form-label">First Name *</label>
+                    <input
+                      type="text"
+                      className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                    {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="lastName" className="form-label">Last Name *</label>
+                    <input
+                      type="text"
+                      className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                    {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="phoneNumber" className="form-label">Phone Number *</label>
+                    <input
+                      type="tel"
+                      className={`form-control ${errors.phoneNumber ? 'is-invalid' : ''}`}
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                    {errors.phoneNumber && <div className="invalid-feedback">{errors.phoneNumber}</div>}
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="address" className="form-label">Address *</label>
+                    <input
+                      type="text"
+                      className={`form-control ${errors.address ? 'is-invalid' : ''}`}
+                      id="address"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                    {errors.address && <div className="invalid-feedback">{errors.address}</div>}
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="personalCode" className="form-label">Personal Code *</label>
+                    <input
+                      type="text"
+                      className={`form-control ${errors.personalCode ? 'is-invalid' : ''}`}
+                      id="personalCode"
+                      name="personalCode"
+                      value={formData.personalCode}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                    {errors.personalCode && <div className="invalid-feedback">{errors.personalCode}</div>}
+                  </div>
+                  {/* Collector field is set automatically and not shown in the form */}
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="nationalId" className="form-label">National ID</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="nationalId"
+                      name="nationalId"
+                      value={formData.nationalId}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="occupation" className="form-label">Occupation</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="occupation"
+                      name="occupation"
+                      value={formData.occupation}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="emergencyContactName" className="form-label">Emergency Contact Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="emergencyContactName"
+                      name="emergencyContactName"
+                      value={formData.emergencyContactName}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="emergencyContactPhone" className="form-label">Emergency Contact Phone</label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      id="emergencyContactPhone"
+                      name="emergencyContactPhone"
+                      value={formData.emergencyContactPhone}
+                      onChange={handleChange}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <div className="form-check mt-4">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="registrationFeePaid"
+                        name="registrationFeePaid"
+                        checked={formData.registrationFeePaid}
+                        onChange={handleChange}
+                        disabled={loading}
+                      />
+                      <label className="form-check-label" htmlFor="registrationFeePaid">
+                        Registration Fee Paid
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div className="d-flex justify-content-end gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => navigate('/clients')}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        {isEdit ? 'Updating...' : 'Creating...'}
+                      </>
+                    ) : (
+                      <>
+                        <i className={`fas ${isEdit ? 'fa-save' : 'fa-plus'} me-2`}></i>
+                        {isEdit ? 'Update Client' : 'Create Client'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ClientForm;
