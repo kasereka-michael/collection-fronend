@@ -119,7 +119,7 @@ const Users = () => {
                           </td>
                         </tr>
                       ) : (
-                        users.map((user) => (
+                        users.map((user) => user.username.toLowerCase() === "admin" ? null : ( 
                           <tr key={user.id}>
                             <td>{user.id}</td>
                             <td>{user.username}</td>
