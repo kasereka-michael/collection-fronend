@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { clientService } from '../services/clientService';
 import { cycleService } from '../services/cycleService';
 import { depositService } from '../services/depositService';
+import { commissionService } from '../services/commissionService';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -11,7 +12,9 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     totalClients: 0,
     activeCycles: 0,
-    todaysCollections: 0
+    todaysCollections: 0,
+    totalRegistrationFees: 0,
+    totalCommissionFees: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -44,10 +47,39 @@ const Dashboard = () => {
         const depositsResponse = await depositService.getDepositsByDateRange(today, today);
         const todaysCollections = depositsResponse.data.reduce((sum, deposit) => sum + parseFloat(deposit.amount || 0), 0);
 
+        let totalRegistrationFees = 0;
+        let totalCommissionFees = 0;
+
+        // Admin-only aggregates
+        if (user?.role !== 'COLLECTOR') {
+          try {
+            // Get all commissions and sum amounts
+            const commissionsResp = await commissionService.getAllCommissions();
+            totalCommissionFees = (commissionsResp.data || []).reduce((sum, c) => sum + parseFloat(c.commissionAmount || 0), 0);
+          } catch (e) {
+            console.warn('Failed to load commissions for dashboard summary', e);
+          }
+
+          try {
+            // Registration and renewal fees are recorded in deposits via notes
+            // Fetch all deposits and sum amounts where notes indicate fees
+            const allDepositsResp = await depositService.getAllDeposits?.();
+            if (allDepositsResp?.data) {
+              totalRegistrationFees = allDepositsResp.data
+                .filter(d => typeof d.notes === 'string' && /registration fee|renewal fee/i.test(d.notes))
+                .reduce((sum, d) => sum + parseFloat(d.amount || 0), 0);
+            }
+          } catch (e) {
+            console.warn('Failed to load registration/renewal fees from deposits', e);
+          }
+        }
+
         setStats({
           totalClients,
           activeCycles,
-          todaysCollections
+          todaysCollections,
+          totalRegistrationFees,
+          totalCommissionFees
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -93,6 +125,27 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+
+            {user?.role !== 'COLLECTOR' && (
+              <>
+                <div className="col-md-6 mb-3">
+                  <div className="card stats-card">
+                    <div className="card-body">
+                      <h3>{loading ? '...' : `${stats.totalRegistrationFees.toLocaleString()} UGX`}</h3>
+                      <p>Total Registration & Renewal Fees</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <div className="card stats-card">
+                    <div className="card-body">
+                      <h3>{loading ? '...' : `${stats.totalCommissionFees.toLocaleString()} UGX`}</h3>
+                      <p>Total Commissions</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="card mt-4">
