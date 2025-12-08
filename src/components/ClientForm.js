@@ -34,13 +34,30 @@ const ClientForm = () => {
       return;
     }
 
-    // Set collector to current user id if not editing
-    if (user && !isEdit) {
-      setFormData(prev => ({ ...prev, collector: user.id }));
-    }
-    if (isEdit) {
-      fetchClient();
-    }
+    const init = async () => {
+      // Set collector to current user id if not editing
+      if (user && !isEdit) {
+        setFormData(prev => ({ ...prev, collector: user.id }));
+      }
+      if (isEdit) {
+        await fetchClient();
+      } else {
+        // Try to fetch next personal code from backend if available
+        try {
+          if (clientService.getNextPersonalCode) {
+            const resp = await clientService.getNextPersonalCode();
+            if (resp?.data?.code) {
+              setFormData(prev => ({ ...prev, personalCode: resp.data.code }));
+            }
+          }
+        } catch (e) {
+          // Fallback: leave personalCode empty; backend will generate on save
+          console.warn('Unable to prefetch next personal code. It will be generated on save.', e);
+        }
+      }
+    };
+
+    init();
   }, [id, isEdit, user, navigate]);
 
   const fetchClient = async () => {
@@ -235,7 +252,9 @@ const ClientForm = () => {
                       name="personalCode"
                       value={formData.personalCode}
                       onChange={handleChange}
-                      disabled={loading}
+                      disabled={loading || !isEdit}
+                      placeholder={isEdit ? '' : 'Auto-generated'}
+                      readOnly={!isEdit}
                     />
                     {errors.personalCode && <div className="invalid-feedback">{errors.personalCode}</div>}
                   </div>
