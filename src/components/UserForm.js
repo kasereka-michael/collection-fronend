@@ -75,10 +75,11 @@ const UserForm = () => {
       newErrors.lastName = 'Last name is required';
     }
     
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    // Email validation: allow empty, or must end with @gmail.com
+    if (formData.email && formData.email.trim().length > 0) {
+      if (!/^[^\s@]+@gmail\.com$/i.test(formData.email.trim())) {
+        newErrors.email = 'Email must end with @gmail.com or be left empty';
+      }
     }
     
     if (!isEdit) {
@@ -98,6 +99,16 @@ const UserForm = () => {
       
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
+      }
+    }
+
+    // Phone validation: must be exactly 13 characters, start with +256, digits thereafter
+    const phone = (formData.phoneNumber || '').trim();
+    if (phone.length > 0) {
+      if (phone.length !== 13) {
+        newErrors.phoneNumber = 'Phone number must be exactly 13 characters (e.g., +256XXXXXXXXX)';
+      } else if (!/^\+256\d{9}$/.test(phone)) {
+        newErrors.phoneNumber = 'Phone number must start with +256 followed by 9 digits';
       }
     }
 
@@ -223,12 +234,13 @@ const UserForm = () => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label htmlFor="email" className="form-label">Email *</label>
+                    <label htmlFor="email" className="form-label">Email (Gmail only or leave blank)</label>
                     <input
                       type="email"
                       className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                       id="email"
                       name="email"
+                      placeholder="example@gmail.com (optional)"
                       value={formData.email}
                       onChange={handleChange}
                       disabled={loading}
@@ -237,16 +249,19 @@ const UserForm = () => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label htmlFor="phoneNumber" className="form-label">Phone Number</label>
+                    <label htmlFor="phoneNumber" className="form-label">Phone Number (+256XXXXXXXXX)</label>
                     <input
                       type="tel"
-                      className="form-control"
+                      className={`form-control ${errors.phoneNumber ? 'is-invalid' : ''}`}
                       id="phoneNumber"
                       name="phoneNumber"
+                      placeholder="+256997773611"
                       value={formData.phoneNumber}
                       onChange={handleChange}
                       disabled={loading}
+                      maxLength={13}
                     />
+                    {errors.phoneNumber && <div className="invalid-feedback">{errors.phoneNumber}</div>}
                   </div>
 
                   <div className="col-md-6 mb-3">

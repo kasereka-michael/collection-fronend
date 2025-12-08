@@ -137,14 +137,14 @@ const Clients = () => {
                         <th>Address</th>
                         <th>Personal Code</th>
                         <th>Reg. Fee Paid</th>
-                        <th style={user.role === 'COLLECTOR' ? {display: 'none'} : {display: 'block'}}>Collector</th>
+                        {user.role !== 'COLLECTOR' && <th>Collector</th>}
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {Array.isArray(clients) && clients.length === 0 ? (
                         <tr>
-                          <td colSpan="9" className="text-center">
+                          <td colSpan={user.role !== 'COLLECTOR' ? 9 : 8} className="text-center">
                             No clients found
                           </td>
                         </tr>
@@ -158,10 +158,9 @@ const Clients = () => {
                             <td>{client.address}</td>
                             <td>{client.personalCode}</td>
                             <td>{client.registrationFeePaid ? 'Yes' : 'No'}</td>
-                            <td style={user.role === 'COLLECTOR' ? {display: 'none'} : {display: 'block'}}>{client.collector ? (client.collector.username || client.collector.id) : 'N/A'}</td>
-                              {
-                                  console.error("this is the real collector's name:  " + client.collector.firstName)
-                              }
+                            {user.role !== 'COLLECTOR' && (
+                              <td>{client.collector ? (client.collector.username || client.collector.firstName || client.collector.id) : 'N/A'}</td>
+                            )}
                             <td style={{display:'flex',flexDirection:'row', alignItems: 'center'}}>
                               <button
                                 className="btn btn-sm btn-info me-2"
