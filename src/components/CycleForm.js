@@ -47,7 +47,9 @@ const CycleForm = () => {
       } else {
         response = await clientService.getAllClients();
       }
-      setClients(response.data);
+      const data = response.data;
+      const items = Array.isArray(data) ? data : (data?.content ?? []);
+      setClients(items);
     } catch (error) {
       console.error('Error fetching clients:', error);
     }
@@ -177,7 +179,7 @@ const CycleForm = () => {
                       disabled={true} // To avoid user to select
                     >
                       <option value="">Select a client</option>
-                      {clients.map(client => (
+                      {Array.isArray(clients) && clients.map(client => (
                         <option key={client.id} value={client.id}>
                           {client.firstName} - {client.personalCode}
                         </option>
