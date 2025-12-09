@@ -31,7 +31,9 @@ const Cycles = () => {
     try {
       setLoading(true);
       const response = await cycleService.getCyclesForCurrentCollector();
-      setCycles(response.data);
+      const data = response.data;
+      const items = Array.isArray(data) ? data : (data?.content ?? []);
+      setCycles(items);
     } catch (error) {
       console.error('Error fetching cycles:', error);
       alert('Error fetching cycles. Please try again.');
@@ -43,7 +45,9 @@ const Cycles = () => {
   const fetchClients = async () => {
     try {
       const response = await clientService.getAllClients();
-      setClients(response.data);
+      const data = response.data;
+      const items = Array.isArray(data) ? data : (data?.content ?? []);
+      setClients(items);
     } catch (error) {
       console.error('Error fetching clients:', error);
     }
@@ -108,7 +112,7 @@ const Cycles = () => {
     return client ? client.firstName : 'Unknown Client';
   };
 
-  const filteredCycles = filterCycles();
+  const filteredCycles = Array.isArray(cycles) ? filterCycles() : [];
 
   if (loading) {
     return <LoadingSpinner />;
@@ -156,7 +160,7 @@ const Cycles = () => {
                     onChange={(e) => setFilterClient(e.target.value)}
                   >
                     <option value="ALL">All Clients</option>
-                    {clients.map(client => (
+                    {Array.isArray(clients) && clients.map(client => (
                       <option key={client.id} value={client.id}>
                         {client.firstName}
                       </option>
