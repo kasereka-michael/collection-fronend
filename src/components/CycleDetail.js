@@ -98,8 +98,10 @@ const CycleDetail = () => {
   //     !cycle.some(c => c.status === 'CLOSED');
 
   const calculateProgress = () => {
-    if (!cycle || !cycle.targetAmount) return 0;
-    return Math.min((cycle.targetAmount / cycle.targetAmount) * 100, 100);
+    if (!cycle) return 0;
+    const completed = parseInt(cycle.totalDeposits || 0, 10);
+    const pct = (completed / 31) * 100;
+    return Math.max(0, Math.min(pct, 100));
   };
 
   // const getRemainingAmount = () => {
@@ -134,13 +136,15 @@ const CycleDetail = () => {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1>Cycle Details - #{cycle.id}</h1>
             <div className="btn-group">
-              <button
-                className="btn btn-warning me-2"
-                onClick={() => navigate(`/cycles/${id}/edit`)}
-              >
-                <i className="fas fa-edit me-2"></i>
-                Edit
-              </button>
+              {user?.role === 'COLLECTOR' && (
+                <button
+                  className="btn btn-warning me-2"
+                  onClick={() => navigate(`/cycles/${id}/edit`)}
+                >
+                  <i className="fas fa-edit me-2"></i>
+                  Edit
+                </button>
+              )}
               {cycle.status === 'ACTIVE' && cycle.totalDeposits >= 31 && (
                 <button
                   className="btn btn-success me-2"
