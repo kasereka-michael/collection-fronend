@@ -1,17 +1,17 @@
 import api from './api';
 
 export const userService = {
-  // Get all users
-  getAllUsers: () => api.get('/users'),
+  // Get all users (paginated)
+  getAllUsers: ({ page = 0, size = 10 } = {}) => api.get('/users', { params: { page, size } }),
   
   // Get user by ID
   getUserById: (id) => api.get(`/users/${id}`),
   
-  // Get active users
-  getActiveUsers: () => api.get('/users/active'),
+  // Get active users (paginated)
+  getActiveUsers: ({ page = 0, size = 10 } = {}) => api.get('/users/active', { params: { page, size } }),
   
-  // Get users by role
-  getUsersByRole: (role) => api.get(`/users/role/${role}`),
+  // Get users by role (paginated)
+  getUsersByRole: (role, { page = 0, size = 10 } = {}) => api.get(`/users/role/${role}`, { params: { page, size } }),
   
   // Create new user
   createUser: (userData) => api.post('/users', userData),
