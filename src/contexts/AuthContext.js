@@ -16,7 +16,13 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Optionally, you could implement a /me endpoint to check session
+    // Rehydrate user from localStorage if available
+    try {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    } catch {}
     setLoading(false);
   }, []);
 

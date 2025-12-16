@@ -15,6 +15,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      try {
+        // Clear any persisted auth state
+        localStorage.removeItem('user');
+      } catch {}
+      // Redirect to login
       window.location.href = '/login';
     }
     return Promise.reject(error);
