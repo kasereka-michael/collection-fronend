@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { depositService } from '../services/depositService';
 import { cycleService } from '../services/cycleService';
 import { useAuth } from '../contexts/AuthContext';
+import Pagination from './common/Pagination';
 
 const Deposits = () => {
   const [deposits, setDeposits] = useState([]);
@@ -13,27 +14,43 @@ const Deposits = () => {
     startDate: '',
     endDate: ''
   });
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const navigate = useNavigate();
   const { user } = useAuth();
 
   useEffect(() => {
-    fetchDeposits();
     fetchCycles();
   }, []);
 
   useEffect(() => {
     if (filterCycle !== 'ALL') {
-      fetchDepositsByCycle();
+      fetchDepositsByCycle(page, size);
+    } else if (dateRange.startDate && dateRange.endDate) {
+      fetchDepositsByDateRange(page, size);
     } else {
-      fetchDeposits();
+      fetchDeposits(page, size);
     }
-  }, [filterCycle]);
+  }, [filterCycle, page, size, dateRange.startDate, dateRange.endDate]);
 
-  const fetchDeposits = async () => {
+  const fetchDeposits = async (p = 0, s = 10) => {
     try {
       setLoading(true);
-      const response = await depositService.getAllDeposits();
-      setDeposits(response.data);
+      const response = await depositService.getAllDeposits(p, s);
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setDeposits(data);
+        setTotalElements(data.length);
+        setTotalPages(1);
+      } else {
+        setDeposits(data.content || []);
+        setTotalElements(data.totalElements || 0);
+        setTotalPages(data.totalPages || 0);
+        setPage(data.number || 0);
+      }
     } catch (error) {
       console.error('Error fetching deposits:', error);
     } finally {
@@ -50,11 +67,21 @@ const Deposits = () => {
     }
   };
 
-  const fetchDepositsByCycle = async () => {
+  const fetchDepositsByCycle = async (p = 0, s = 10) => {
     try {
       setLoading(true);
-      const response = await depositService.getDepositsByCycle(filterCycle);
-      setDeposits(response.data);
+      const response = await depositService.getDepositsByCycle(filterCycle, p, s);
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setDeposits(data);
+        setTotalElements(data.length);
+        setTotalPages(1);
+      } else {
+        setDeposits(data.content || []);
+        setTotalElements(data.totalElements || 0);
+        setTotalPages(data.totalPages || 0);
+        setPage(data.number || 0);
+      }
     } catch (error) {
       console.error('Error fetching deposits by cycle:', error);
     } finally {
@@ -62,20 +89,36 @@ const Deposits = () => {
     }
   };
 
+  const fetchDepositsByDateRange = async (p = 0, s = 10) => {
+    try {
+      setLoading(true);
+      const response = await depositService.getDepositsByDateRange(
+        dateRange.startDate,
+        dateRange.endDate,
+        p,
+        s
+      );
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setDeposits(data);
+        setTotalElements(data.length);
+        setTotalPages(1);
+      } else {
+        setDeposits(data.content || []);
+        setTotalElements(data.totalElements || 0);
+        setTotalPages(data.totalPages || 0);
+        setPage(data.number || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching deposits by date range:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDateRangeFilter = async () => {
     if (dateRange.startDate && dateRange.endDate) {
-      try {
-        setLoading(true);
-        const response = await depositService.getDepositsByDateRange(
-          dateRange.startDate, 
-          dateRange.endDate
-        );
-        setDeposits(response.data);
-      } catch (error) {
-        console.error('Error fetching deposits by date range:', error);
-      } finally {
-        setLoading(false);
-      }
+      setPage(0); // reset to first page when applying filter
     }
   };
 
@@ -83,7 +126,7 @@ const Deposits = () => {
     if (window.confirm('Are you sure you want to delete this deposit?')) {
       try {
         await depositService.deleteDeposit(id);
-        fetchDeposits(); // Refresh the list
+        fetchDeposits(page, size); // Refresh the list
       } catch (error) {
         console.error('Error deleting deposit:', error);
         alert('Error deleting deposit');
