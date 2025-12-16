@@ -289,6 +289,21 @@ const Deposits = () => {
             </div>
           </div>
 
+          {/* Pagination Controls */}
+          <div className="mt-3 d-flex justify-content-end">
+            <Pagination
+              page={page}
+              size={size}
+              totalElements={totalElements}
+              totalPages={totalPages}
+              onPageChange={(newPage) => setPage(newPage)}
+              onSizeChange={(newSize) => {
+                setSize(newSize);
+                setPage(0);
+              }}
+            />
+          </div>
+
           <div className="mt-3">
             <button 
               className="btn btn-secondary"
