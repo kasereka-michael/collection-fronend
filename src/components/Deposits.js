@@ -246,6 +246,7 @@ const Deposits = () => {
                       <tr>
                         <th>ID</th>
                         <th>Client</th>
+                        {user.role === 'ADMIN' && <th>Collector</th>}
                         <th>Cycle</th>
                         <th>Amount (UGX)</th>
                         <th>Date</th>
@@ -256,7 +257,7 @@ const Deposits = () => {
                     <tbody>
                       {deposits.length === 0 ? (
                         <tr>
-                          <td colSpan="7" className="text-center">
+                          <td colSpan={user.role === 'ADMIN' ? 8 : 7} className="text-center">
                             No deposits found
                           </td>
                         </tr>
@@ -265,6 +266,9 @@ const Deposits = () => {
                           <tr key={deposit.id}>
                             <td>{deposit.id}</td>
                               <td>{deposit.clientName || `${deposit.client?.firstName ?? ''} ${deposit.client?.lastName ?? ''}`.trim() || '—'}</td>
+                            {user.role === 'ADMIN' && (
+                              <td>{deposit.collectorName || deposit.collector?.username || deposit.collector?.firstName || deposit.collectorId || (deposit.client?.collector?.username) || 'N/A'}</td>
+                            )}
                             <td>{deposit.cycleCode || `Cycle ${deposit.cycleId ?? deposit.cycle?.id ?? ''}`}</td>
                             <td>{parseFloat(deposit.amount).toLocaleString()}</td>
                             <td>{deposit.depositDate ? new Date(deposit.depositDate).toLocaleDateString() : (deposit.createdDate ? new Date(deposit.createdDate).toLocaleDateString() : '—')}</td>
