@@ -6,6 +6,7 @@ import { cycleService } from '../services/cycleService';
 import { depositService } from '../services/depositService';
 import { commissionService } from '../services/commissionService';
 import { isAdminLike } from '../utils/roles';
+import { reportService } from '../services/reportService';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -76,26 +77,22 @@ const Dashboard = () => {
         // Admin-like aggregates (ADMIN and ACCOUNTANT)
         if (isAdminLike(user)) {
           try {
-            // Get all commissions and sum amounts
-            const commissionsResp = await commissionService.getAllCommissions();
-            {
-              const data = commissionsResp.data;
-              const items = Array.isArray(data) ? data : (Array.isArray(data?.content) ? data.content : []);
-              totalCommissionFees = Array.isArray(items)
-                ? items.reduce((sum, c) => sum + parseFloat(c.commissionAmount || 0), 0)
-                : 0;
+            // Prefer backend totals for accuracy and performance
+            const [regTotalResp, commissionTotalResp] = await Promise.all([
+              reportService.getRegistrationFeesTotal().catch(err => err),
+              reportService.getCommissionFeesTotal().catch(err => err),
+            ]);
+
+            if (regTotalResp?.data?.total !== undefined) {
+              const total = parseFloat(regTotalResp.data.total);
+              totalRegistrationFees = isNaN(total) ? 0 : total;
+            }
+            if (commissionTotalResp?.data?.total !== undefined) {
+              const total = parseFloat(commissionTotalResp.data.total);
+              totalCommissionFees = isNaN(total) ? 0 : total;
             }
           } catch (e) {
-            console.warn('Failed to load commissions for dashboard summary', e);
-          }
-
-          try {
-            // Get today's total registration fees from backend
-            const regTodayResp = await (await import('../services/reportService')).reportService.getTodayRegistrationFees();
-            const total = parseFloat(regTodayResp?.data?.total ?? 0);
-            totalRegistrationFees = isNaN(total) ? 0 : total;
-          } catch (e) {
-            console.warn('Failed to load today\'s registration fees', e);
+            // fallback to zero; backend should expose totals endpoints
           }
         }
 

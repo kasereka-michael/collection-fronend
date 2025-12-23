@@ -9,7 +9,8 @@ export const reportService = {
   getWithdrawalReports: (params) => api.get('/withdrawals', { params }),
   getCommissionReports: (params) => api.get('/commissions', { params }),
 
-  // Today's totals
-  // baseURL already includes /api, so we call the relative path under it
+  // Totals
   getTodayRegistrationFees: () => api.get('/reports/registration-fees/today'),
+  getRegistrationFeesTotal: () => api.get('/reports/registration-fees/total'),
+  getCommissionFeesTotal: () => api.get('/reports/commissions/total'),
 };
