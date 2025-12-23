@@ -8,4 +8,7 @@ export const reportService = {
   getDepositReports: (params) => api.get('/deposits', { params }),
   getWithdrawalReports: (params) => api.get('/withdrawals', { params }),
   getCommissionReports: (params) => api.get('/commissions', { params }),
+
+  // Today's totals
+  getTodayRegistrationFees: () => api.get('/reports/registration-fees/today'),
 };

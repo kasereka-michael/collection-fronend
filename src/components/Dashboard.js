@@ -85,18 +85,12 @@ const Dashboard = () => {
           }
 
           try {
-            // Registration and renewal fees are recorded in deposits via notes
-            // Fetch all deposits and sum amounts where notes indicate fees
-            const allDepositsResp = await depositService.getAllDeposits?.();
-            if (allDepositsResp?.data) {
-              const data = allDepositsResp.data;
-              const items = Array.isArray(data) ? data : (data?.content ?? []);
-              totalRegistrationFees = items
-                .filter(d => typeof d.notes === 'string' && /registration fee|renewal fee/i.test(d.notes))
-                .reduce((sum, d) => sum + parseFloat(d.amount || 0), 0);
-            }
+            // Get today's total registration fees from backend
+            const regTodayResp = await (await import('../services/reportService')).reportService.getTodayRegistrationFees();
+            const total = parseFloat(regTodayResp?.data?.total ?? 0);
+            totalRegistrationFees = isNaN(total) ? 0 : total;
           } catch (e) {
-            console.warn('Failed to load registration/renewal fees from deposits', e);
+            console.warn('Failed to load today\'s registration fees', e);
           }
         }
 
