@@ -142,7 +142,8 @@ const Deposits = () => {
   };
 
   const getTotalAmount = () => {
-    return deposits.reduce((sum, deposit) => sum + parseFloat(deposit.amount || 0), 0);
+    const list = Array.isArray(deposits) ? deposits : [];
+    return list.reduce((sum, deposit) => sum + parseFloat(deposit.amount || 0), 0);
   };
 
   return (

@@ -64,8 +64,10 @@ const Dashboard = () => {
         const depositsResponse = await depositService.getDepositsByDateRange(today, today);
         {
           const data = depositsResponse.data;
-          const items = Array.isArray(data) ? data : (data?.content ?? []);
-          var todaysCollections = items.reduce((sum, deposit) => sum + parseFloat(deposit.amount || 0), 0);
+          const items = Array.isArray(data) ? data : (Array.isArray(data?.content) ? data.content : []);
+          var todaysCollections = Array.isArray(items)
+            ? items.reduce((sum, deposit) => sum + parseFloat(deposit.amount || 0), 0)
+            : 0;
         }
 
         let totalRegistrationFees = 0;
@@ -78,8 +80,10 @@ const Dashboard = () => {
             const commissionsResp = await commissionService.getAllCommissions();
             {
               const data = commissionsResp.data;
-              const items = Array.isArray(data) ? data : (data?.content ?? []);
-              totalCommissionFees = items.reduce((sum, c) => sum + parseFloat(c.commissionAmount || 0), 0);
+              const items = Array.isArray(data) ? data : (Array.isArray(data?.content) ? data.content : []);
+              totalCommissionFees = Array.isArray(items)
+                ? items.reduce((sum, c) => sum + parseFloat(c.commissionAmount || 0), 0)
+                : 0;
             }
           } catch (e) {
             console.warn('Failed to load commissions for dashboard summary', e);

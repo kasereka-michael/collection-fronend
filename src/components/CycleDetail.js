@@ -41,13 +41,16 @@ const CycleDetail = () => {
   const fetchCycleDeposits = async () => {
     try {
       const response = await depositService.getDepositsByCycle(id);
-      setDeposits(response.data);
+      const data = response.data;
+      const items = Array.isArray(data) ? data : (Array.isArray(data?.content) ? data.content : []);
+      setDeposits(items);
     } catch (error) {
       console.error('Error fetching cycle deposits:', error);
     }
   };
     const getTotalAmount = () => {
-        return deposits.reduce((sum, deposit) => sum + parseFloat(deposit.amount || 0), 0);
+        const list = Array.isArray(deposits) ? deposits : [];
+        return list.reduce((sum, deposit) => sum + parseFloat(deposit.amount || 0), 0);
     };
 
   const fetchCycleWithdrawals = async () => {
