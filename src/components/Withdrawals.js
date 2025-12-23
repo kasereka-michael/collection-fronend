@@ -109,7 +109,7 @@ const Withdrawals = () => {
         <div className="col-12">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1>Withdrawal Management</h1>
-            {user?.role === 'COLLECTOR' && (
+            {/* {user?.role === 'COLLECTOR' && (
               <button 
                 className="btn btn-primary"
                 onClick={() => navigate('/withdrawals/new')}
@@ -117,7 +117,7 @@ const Withdrawals = () => {
                 <i className="fas fa-plus me-2"></i>
                 New Withdrawal Request
               </button>
-            )}
+            )} */}
           </div>
 
           <div className="card">

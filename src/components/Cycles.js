@@ -124,13 +124,13 @@ const Cycles = () => {
         <div className="col-12">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1>Cycles Management</h1>
-            <button 
+            {/* <button 
               className="btn btn-primary"
               onClick={() => navigate('/cycles/new')}
             >
               <i className="fas fa-plus me-2"></i>
               New Cycle
-            </button>
+            </button> */}
           </div>
 
           {/* Filters */}

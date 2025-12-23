@@ -144,14 +144,14 @@ const Deposits = () => {
         <div className="col-12">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1>Deposit Management</h1>
-            <button 
+            {/* <button 
             style={user.role ==='COLLECTOR' ? {display: 'block'} : {display: 'none'}}
               className="btn btn-primary"
               onClick={() => navigate('/deposits/new')}
             >
               <i className="fas fa-plus me-2"></i>
               Record New Deposit
-            </button>
+            </button> */}
           </div>
 
           {/* Summary Card */}
