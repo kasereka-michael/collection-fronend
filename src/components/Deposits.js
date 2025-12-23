@@ -268,7 +268,7 @@ const Deposits = () => {
                             <td>{deposit.id}</td>
                               <td>{deposit.clientName || `${deposit.client?.firstName ?? ''} ${deposit.client?.lastName ?? ''}`.trim() || '—'}</td>
                             {user.role === 'ADMIN' && (
-                              <td>{deposit.collectorName || deposit.collector?.username || deposit.collector?.firstName || deposit.collectorId || (deposit.client?.collector?.username) || 'N/A'}</td>
+                              <td>{deposit.collectorName || deposit.collector?.username || deposit.collector?.firstName || deposit.collectorId || (deposit.client?.collector?.firstName) || 'N/A'}</td>
                             )}
                             <td>{deposit.cycleCode || `Cycle ${deposit.cycleId ?? deposit.cycle?.id ?? ''}`}</td>
                             <td>{parseFloat(deposit.amount).toLocaleString()}</td>
