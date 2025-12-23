@@ -28,24 +28,44 @@ const Dashboard = () => {
         if (user?.role === 'COLLECTOR') {
           // Fetch clients for this collector
           const clientsResponse = await clientService.getClientsByCollector(user.id);
-          totalClients = clientsResponse.data.length;
+          {
+            const data = clientsResponse.data;
+            const items = Array.isArray(data) ? data : (data?.content ?? []);
+            totalClients = items.length;
+          }
 
           // Fetch active cycles for this collector
           const activeCyclesResponse = await cycleService.getCyclesForCurrentCollector();
-          activeCycles = activeCyclesResponse.data.filter(cycle => cycle.status === 'ACTIVE').length;
+          {
+            const data = activeCyclesResponse.data;
+            const items = Array.isArray(data) ? data : (data?.content ?? []);
+            activeCycles = items.filter(cycle => cycle.status === 'ACTIVE').length;
+          }
         } else {
           // Admin: fetch all
           const clientsResponse = await clientService.getAllClients();
-          totalClients = clientsResponse.data.length;
+          {
+            const data = clientsResponse.data;
+            const items = Array.isArray(data) ? data : (data?.content ?? []);
+            totalClients = items.length;
+          }
 
           const activeCyclesResponse = await cycleService.getActiveCycles();
-          activeCycles = activeCyclesResponse.data.length;
+          {
+            const data = activeCyclesResponse.data;
+            const items = Array.isArray(data) ? data : (data?.content ?? []);
+            activeCycles = items.length;
+          }
         }
 
         // Fetch today's collections (deposits)
         const today = new Date().toISOString().split('T')[0];
         const depositsResponse = await depositService.getDepositsByDateRange(today, today);
-        const todaysCollections = depositsResponse.data.reduce((sum, deposit) => sum + parseFloat(deposit.amount || 0), 0);
+        {
+          const data = depositsResponse.data;
+          const items = Array.isArray(data) ? data : (data?.content ?? []);
+          var todaysCollections = items.reduce((sum, deposit) => sum + parseFloat(deposit.amount || 0), 0);
+        }
 
         let totalRegistrationFees = 0;
         let totalCommissionFees = 0;
@@ -55,7 +75,11 @@ const Dashboard = () => {
           try {
             // Get all commissions and sum amounts
             const commissionsResp = await commissionService.getAllCommissions();
-            totalCommissionFees = (commissionsResp.data || []).reduce((sum, c) => sum + parseFloat(c.commissionAmount || 0), 0);
+            {
+              const data = commissionsResp.data;
+              const items = Array.isArray(data) ? data : (data?.content ?? []);
+              totalCommissionFees = items.reduce((sum, c) => sum + parseFloat(c.commissionAmount || 0), 0);
+            }
           } catch (e) {
             console.warn('Failed to load commissions for dashboard summary', e);
           }
@@ -65,7 +89,9 @@ const Dashboard = () => {
             // Fetch all deposits and sum amounts where notes indicate fees
             const allDepositsResp = await depositService.getAllDeposits?.();
             if (allDepositsResp?.data) {
-              totalRegistrationFees = allDepositsResp.data
+              const data = allDepositsResp.data;
+              const items = Array.isArray(data) ? data : (data?.content ?? []);
+              totalRegistrationFees = items
                 .filter(d => typeof d.notes === 'string' && /registration fee|renewal fee/i.test(d.notes))
                 .reduce((sum, d) => sum + parseFloat(d.amount || 0), 0);
             }
