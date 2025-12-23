@@ -27,6 +27,7 @@ const Deposits = () => {
   }, []);
 
   useEffect(() => {
+    // when filters change, ensure we fetch appropriate paged data
     if (filterCycle !== 'ALL') {
       fetchDepositsByCycle(page, size);
     } else if (dateRange.startDate && dateRange.endDate) {
@@ -36,20 +37,32 @@ const Deposits = () => {
     }
   }, [filterCycle, page, size, dateRange.startDate, dateRange.endDate]);
 
+  const syncPageInfo = (data, fallbackLength = 0, p = 0, s = 10) => {
+    if (Array.isArray(data)) {
+      // Non-paginated response
+      setTotalElements(fallbackLength || data.length);
+      // Compute pages from current page size
+      const pages = Math.max(1, Math.ceil((fallbackLength || data.length) / s));
+      setTotalPages(pages);
+    } else {
+      setTotalElements(data.totalElements ?? 0);
+      setTotalPages(data.totalPages ?? 0);
+      // Keep our page state aligned with backend's page number
+      if (typeof data.number === 'number') setPage(data.number);
+    }
+  };
+
   const fetchDeposits = async (p = 0, s = 10) => {
     try {
       setLoading(true);
       const response = await depositService.getAllDeposits(p, s);
       const data = response.data;
       if (Array.isArray(data)) {
-        setDeposits(data);
-        setTotalElements(data.length);
-        setTotalPages(1);
+        setDeposits(data.slice(p * s, p * s + s));
+        syncPageInfo(data, data.length, p, s);
       } else {
         setDeposits(data.content || []);
-        setTotalElements(data.totalElements || 0);
-        setTotalPages(data.totalPages || 0);
-        setPage(data.number || 0);
+        syncPageInfo(data, 0, p, s);
       }
     } catch (error) {
       console.error('Error fetching deposits:', error);
@@ -73,14 +86,11 @@ const Deposits = () => {
       const response = await depositService.getDepositsByCycle(filterCycle, p, s);
       const data = response.data;
       if (Array.isArray(data)) {
-        setDeposits(data);
-        setTotalElements(data.length);
-        setTotalPages(1);
+        setDeposits(data.slice(p * s, p * s + s));
+        syncPageInfo(data, data.length, p, s);
       } else {
         setDeposits(data.content || []);
-        setTotalElements(data.totalElements || 0);
-        setTotalPages(data.totalPages || 0);
-        setPage(data.number || 0);
+        syncPageInfo(data, 0, p, s);
       }
     } catch (error) {
       console.error('Error fetching deposits by cycle:', error);
@@ -100,14 +110,11 @@ const Deposits = () => {
       );
       const data = response.data;
       if (Array.isArray(data)) {
-        setDeposits(data);
-        setTotalElements(data.length);
-        setTotalPages(1);
+        setDeposits(data.slice(p * s, p * s + s));
+        syncPageInfo(data, data.length, p, s);
       } else {
         setDeposits(data.content || []);
-        setTotalElements(data.totalElements || 0);
-        setTotalPages(data.totalPages || 0);
-        setPage(data.number || 0);
+        syncPageInfo(data, 0, p, s);
       }
     } catch (error) {
       console.error('Error fetching deposits by date range:', error);
@@ -184,7 +191,10 @@ const Deposits = () => {
                   <select
                     className="form-select"
                     value={filterCycle}
-                    onChange={(e) => setFilterCycle(e.target.value)}
+                    onChange={(e) => {
+                      setFilterCycle(e.target.value);
+                      setPage(0); // reset to first page when filter changes
+                    }}
                   >
                     <option value="ALL">All Cycles</option>
                     {cycles.map(cycle => (
@@ -212,7 +222,9 @@ const Deposits = () => {
                     />
                     <button 
                       className="btn btn-outline-secondary" 
-                      onClick={handleDateRangeFilter}
+                      onClick={() => {
+                        handleDateRangeFilter();
+                      }}
                     >
                       Filter
                     </button>
@@ -244,7 +256,7 @@ const Deposits = () => {
                     <tbody>
                       {deposits.length === 0 ? (
                         <tr>
-                          <td colSpan="6" className="text-center">
+                          <td colSpan="7" className="text-center">
                             No deposits found
                           </td>
                         </tr>
