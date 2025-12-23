@@ -1,6 +1,11 @@
 import api from './api';
 
 export const reportService = {
-  getReports: (filters) =>
-    api.get('/reports', { params: filters }),
+  // Unified reports endpoint with filters and pagination
+  getReports: (params) => api.get('/reports', { params }),
+
+  // Specific helpers if backend has individual endpoints
+  getDepositReports: (params) => api.get('/deposits', { params }),
+  getWithdrawalReports: (params) => api.get('/withdrawals', { params }),
+  getCommissionReports: (params) => api.get('/commissions', { params }),
 };

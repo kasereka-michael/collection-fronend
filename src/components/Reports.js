@@ -74,31 +74,54 @@ const Reports = () => {
   });
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   useEffect(() => {
-    fetchReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+    // When filters change, reset to first page
+    setPage(0);
+  }, [filters.type, filters.startDate, filters.endDate]);
 
-  const fetchReports = async () => {
+  useEffect(() => {
+    fetchReports(page, size);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, size, filters.type, filters.startDate, filters.endDate]);
+
+  const fetchReports = async (p = 0, s = 10) => {
     setLoading(true);
     try {
-      const response = await reportService.getReports(filters);
-      setReports(response.data);
+      const params = { ...filters, page: p, size: s };
+      const response = await reportService.getReports(params);
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setReports(data.slice(p * s, p * s + s));
+        setTotalElements(data.length);
+        setTotalPages(Math.max(1, Math.ceil(data.length / s)));
+      } else {
+        setReports(data.content || []);
+        setTotalElements(data.totalElements || 0);
+        setTotalPages(data.totalPages || 0);
+        if (typeof data.number === 'number') setPage(data.number);
+        if (typeof data.size === 'number') setSize(data.size);
+      }
     } catch (error) {
       setReports([]);
+      setTotalElements(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter logic (client-side fallback)
-  const filteredReports = reports.filter(r => {
+  // Filter logic (client-side fallback if backend returns array)
+  const filteredReports = Array.isArray(reports) ? reports.filter(r => {
     const matchesType = !filters.type || r.type === filters.type;
-    const matchesStart = !filters.startDate || r.date >= filters.startDate;
-    const matchesEnd = !filters.endDate || r.date <= filters.endDate;
+    const matchesStart = !filters.startDate || (r.date && r.date >= filters.startDate);
+    const matchesEnd = !filters.endDate || (r.date && r.date <= filters.endDate);
     return matchesType && matchesStart && matchesEnd;
-  });
+  }) : reports;
 
   const handleChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -175,6 +198,14 @@ const Reports = () => {
                     <i className="fas fa-file-pdf me-2"></i>
                     Download PDF
                   </button>
+                  <button
+                    className="btn btn-outline-secondary ms-2"
+                    onClick={() => window.print()}
+                    disabled={filteredReports.length === 0}
+                  >
+                    <i className="fas fa-print me-2"></i>
+                    Print
+                  </button>
                 </div>
               </div>
             </div>
@@ -186,7 +217,7 @@ const Reports = () => {
                   </div>
                 </div>
               ) : (
-                <div className="table-responsive">
+                <div className="table-responsive" id="printable-report">
                   <table className="table table-striped">
                     <thead>
                       <tr>
@@ -219,6 +250,20 @@ const Reports = () => {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="mt-3 d-flex justify-content-end">
+            {/* Simple pagination to match backend Page results */}
+            <div className="d-flex align-items-center gap-2">
+              <button className="btn btn-outline-secondary" disabled={page <= 0} onClick={() => setPage(0)}>« First</button>
+              <button className="btn btn-outline-secondary" disabled={page <= 0} onClick={() => setPage(page - 1)}>‹ Prev</button>
+              <span>Page {totalPages === 0 ? 0 : page + 1} of {totalPages}</span>
+              <button className="btn btn-outline-secondary" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>Next ›</button>
+              <button className="btn btn-outline-secondary" disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>Last »</button>
+              <select className="form-select ms-2" style={{ width: 100 }} value={size} onChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}>
+                {[10, 20, 50, 100].map(s => <option key={s} value={s}>{s} / page</option>)}
+              </select>
             </div>
           </div>
         </div>
