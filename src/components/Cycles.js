@@ -5,6 +5,7 @@ import { cycleService } from '../services/cycleService';
 import { clientService } from '../services/clientService';
 import LoadingSpinner from './common/LoadingSpinner';
 import ConfirmModal from './common/ConfirmModal';
+import Pagination from './common/Pagination';
 
 const Cycles = () => {
   const { user } = useAuth();
@@ -17,23 +18,38 @@ const Cycles = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [cycleToDelete, setCycleToDelete] = useState(null);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   useEffect(() => {
-    fetchCycles();
+    fetchCycles(page, size);
     fetchClients();
-  }, []);
+  }, [page, size]);
 
   useEffect(() => {
-    filterCycles();
+    // reset to first page whenever filters/search change
+    setPage(0);
   }, [filterStatus, filterClient, searchQuery]);
 
-  const fetchCycles = async () => {
+  const fetchCycles = async (p = 0, s = 10) => {
     try {
       setLoading(true);
-      const response = await cycleService.getCyclesForCurrentCollector();
+      const response = await cycleService.getCyclesForCurrentCollector(p, s);
       const data = response.data;
-      const items = Array.isArray(data) ? data : (data?.content ?? []);
-      setCycles(items);
+      if (Array.isArray(data)) {
+        // local filter/search on array then paginate client-side
+        let items = data;
+        setTotalElements(items.length);
+        setTotalPages(Math.max(1, Math.ceil(items.length / s)));
+        setCycles(items.slice(p * s, p * s + s));
+      } else {
+        setCycles(data.content || []);
+        setTotalElements(data.totalElements || 0);
+        setTotalPages(data.totalPages || 0);
+        if (typeof data.number === 'number') setPage(data.number);
+      }
     } catch (error) {
       console.error('Error fetching cycles:', error);
       alert('Error fetching cycles. Please try again.');
@@ -258,6 +274,18 @@ const Cycles = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="mt-3 d-flex justify-content-end">
+            <Pagination
+              page={page}
+              size={size}
+              totalElements={totalElements}
+              totalPages={totalPages}
+              onPageChange={(newPage) => setPage(newPage)}
+              onSizeChange={(newSize) => { setSize(newSize); setPage(0); }}
+            />
           </div>
 
           <div className="mt-3">

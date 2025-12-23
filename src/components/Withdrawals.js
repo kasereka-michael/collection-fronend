@@ -2,48 +2,66 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { withdrawalService } from '../services/withdrawalService';
 import { useAuth } from '../contexts/AuthContext';
+import Pagination from './common/Pagination';
 
 const Withdrawals = () => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchWithdrawals();
-  }, [filterStatus, user]);
+    fetchWithdrawals(page, size);
+  }, [filterStatus, user, page, size]);
 
-  const fetchWithdrawals = async () => {
+  const fetchWithdrawals = async (p = 0, s = 10) => {
     try {
       setLoading(true);
       let response;
+
+      const setFromResponse = (data) => {
+        if (Array.isArray(data)) {
+          setWithdrawals(data.slice(p * s, p * s + s));
+          setTotalElements(data.length);
+          setTotalPages(Math.max(1, Math.ceil(data.length / s)));
+        } else {
+          setWithdrawals(data.content || []);
+          setTotalElements(data.totalElements || 0);
+          setTotalPages(data.totalPages || 0);
+          if (typeof data.number === 'number') setPage(data.number);
+        }
+      };
       
       if (user?.role === 'COLLECTOR') {
         switch (filterStatus) {
           case 'PENDING':
-            response = await withdrawalService.getMyPendingWithdrawalRequests();
+            response = await withdrawalService.getMyPendingWithdrawalRequests(p, s);
             break;
           case 'APPROVED':
-            response = await withdrawalService.getMyApprovedWithdrawalRequests();
+            response = await withdrawalService.getMyApprovedWithdrawalRequests(p, s);
             break;
           default:
-            response = await withdrawalService.getMyWithdrawalRequests();
+            response = await withdrawalService.getMyWithdrawalRequests(p, s);
         }
       } else {
         switch (filterStatus) {
           case 'PENDING':
-            response = await withdrawalService.getPendingWithdrawalRequests();
+            response = await withdrawalService.getPendingWithdrawalRequests(p, s);
             break;
           case 'APPROVED':
-            response = await withdrawalService.getApprovedWithdrawalRequests();
+            response = await withdrawalService.getApprovedWithdrawalRequests(p, s);
             break;
           default:
-            response = await withdrawalService.getAllWithdrawalRequests();
+            response = await withdrawalService.getAllWithdrawalRequests(p, s);
         }
       }
-      
-      setWithdrawals(response.data);
+
+      setFromResponse(response.data);
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
     } finally {
@@ -130,7 +148,7 @@ const Withdrawals = () => {
                   <select
                     className="form-select"
                     value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
+                    onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}
                   >
                     <option value="ALL">All Status</option>
                     <option value="PENDING">Pending</option>
@@ -227,6 +245,18 @@ const Withdrawals = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="mt-3 d-flex justify-content-end">
+            <Pagination
+              page={page}
+              size={size}
+              totalElements={totalElements}
+              totalPages={totalPages}
+              onPageChange={(newPage) => setPage(newPage)}
+              onSizeChange={(newSize) => { setSize(newSize); setPage(0); }}
+            />
           </div>
 
           <div className="mt-3">

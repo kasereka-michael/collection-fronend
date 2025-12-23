@@ -276,20 +276,22 @@ const Deposits = () => {
                               >
                                 <i className="fas fa-eye"></i>
                               </button>
-                              <button
-                              style={user.role ==='COLLECTOR' ? {display: 'block'} : {display: 'none'}}
-                                className="btn btn-sm btn-warning me-2"
-                                onClick={() => navigate(`/deposits/${deposit.id}/edit`)}
-                              >
-                                <i className="fas fa-edit"></i>
-                              </button>
-                              <button
-                              style={user.role ==='COLLECTOR' ? {display: 'block'} : {display: 'none'}}
-                                className="btn btn-sm btn-danger"
-                                onClick={() => handleDelete(deposit.id)}
-                              >
-                                <i className="fas fa-trash"></i>
-                              </button>
+                              {user.role !== 'COLLECTOR' && (
+                                <>
+                                  <button
+                                    className="btn btn-sm btn-warning me-2"
+                                    onClick={() => navigate(`/deposits/${deposit.id}/edit`)}
+                                  >
+                                    <i className="fas fa-edit"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-danger"
+                                    onClick={() => handleDelete(deposit.id)}
+                                  >
+                                    <i className="fas fa-trash"></i>
+                                  </button>
+                                </>
+                              )}
                             </td>
                           </tr>
                         ))
