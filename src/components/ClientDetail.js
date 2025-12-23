@@ -145,10 +145,21 @@ const ClientDetail = () => {
                       <strong>Emergency Phone:</strong>
                       <p>{client.emergencyContactPhone || 'N/A'}</p>
                     </div>
-                      <div className="col-md-6 mb-3">
-                          <strong>Registration Fee Paid:</strong>
-                          <p>{client.registrationFeePaid || 'N/A'}</p>
-                      </div>
+                     <div className="col-md-6 mb-3">
+  <strong>Registration Fee Paid:</strong>
+  <p>
+    {client.registrationFeePaid === true ? (
+      <span className="text-success">
+        <i className="bi bi-check-circle-fill"></i> Yes
+      </span>
+    ) : (
+      <span className="text-danger">
+        <i className="bi bi-x-circle-fill"></i> No
+      </span>
+    )}
+  </p>
+</div>
+
 
                   </div>
                 </div>
