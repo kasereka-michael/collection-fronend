@@ -5,6 +5,7 @@ import { clientService } from '../services/clientService';
 import { cycleService } from '../services/cycleService';
 import { depositService } from '../services/depositService';
 import { commissionService } from '../services/commissionService';
+import { isAdminLike } from '../utils/roles';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -70,8 +71,8 @@ const Dashboard = () => {
         let totalRegistrationFees = 0;
         let totalCommissionFees = 0;
 
-        // Admin-only aggregates
-        if (user?.role !== 'COLLECTOR') {
+        // Admin-like aggregates (ADMIN and ACCOUNTANT)
+        if (isAdminLike(user)) {
           try {
             // Get all commissions and sum amounts
             const commissionsResp = await commissionService.getAllCommissions();
@@ -146,7 +147,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {user?.role !== 'COLLECTOR' && (
+            {isAdminLike(user) && (
               <>
                 <div className="col-md-6 mb-3">
                   <div className="card stats-card">
@@ -218,6 +219,8 @@ const Dashboard = () => {
                     <button 
                       className="btn btn-primary w-100"
                       onClick={() => navigate('/users')}
+                      disabled={!user || user.role !== 'ADMIN'}
+                      title={user?.role === 'ACCOUNTANT' ? 'Read-only: Admin only' : undefined}
                     >
                       <i className="fas fa-users me-2"></i>
                       Manage Users
@@ -227,6 +230,8 @@ const Dashboard = () => {
                     <button 
                       className="btn btn-success w-100"
                       onClick={() => navigate('/withdrawals')}
+                      disabled={!user || user.role !== 'ADMIN'}
+                      title={user?.role === 'ACCOUNTANT' ? 'Read-only: Admin only' : undefined}
                     >
                       <i className="fas fa-check-circle me-2"></i>
                       Approve Withdrawals
@@ -245,6 +250,8 @@ const Dashboard = () => {
                     <button 
                       className="btn btn-secondary w-100"
                       onClick={() => navigate('/users')}
+                      disabled={!user || user.role !== 'ADMIN'}
+                      title={user?.role === 'ACCOUNTANT' ? 'Read-only: Admin only' : undefined}
                     >
                       <i className="fas fa-cog me-2"></i>
                       System Settings
