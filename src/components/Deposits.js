@@ -267,7 +267,7 @@ const Deposits = () => {
                           <tr key={deposit.id}>
                             <td>{deposit.id}</td>
                               <td>{deposit.clientName || `${deposit.client?.firstName ?? ''} ${deposit.client?.lastName ?? ''}`.trim() || '—'}</td>
-                            {user.role === 'ADMIN' && (
+                            {user.role === 'ADMIN' || 'ACCOUNTANT' && (
                               <td>{deposit.collectorName || deposit.collector?.username || deposit.collector?.firstName || deposit.collectorId || (deposit.client?.collector?.firstName) || 'N/A'}</td>
                             )}
                             <td>{deposit.cycleCode || `Cycle ${deposit.cycleId ?? deposit.cycle?.id ?? ''}`}</td>
