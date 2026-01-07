@@ -72,7 +72,7 @@ const WithdrawalDetail = () => {
               <div className="row g-3">
                 <div className="col-md-6">
                   <strong>Cycle</strong>
-                  <div>{withdrawal.cycleId}</div>
+                  <div>{withdrawal.cycle.cycleId}</div>
                 </div>
                 <div className="col-md-6">
                   <strong>Status</strong>
@@ -84,7 +84,7 @@ const WithdrawalDetail = () => {
                 </div>
                 <div className="col-md-6">
                   <strong>Approved Amount</strong>
-                  <div>{withdrawal.approvedAmount ? `${parseFloat(withdrawal.approvedAmount).toLocaleString()} UGX` : 'N/A'}</div>
+                  <div>{parseFloat(withdrawal.requestedAmount || 0).toLocaleString()} UGX</div>
                 </div>
                 <div className="col-md-6">
                   <strong>Request Date</strong>
